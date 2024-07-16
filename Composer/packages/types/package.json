@@ -21,11 +21,11 @@
     "botframework-schema": "^4.11.1",
     "express-serve-static-core": "0.1.1",
     "json-schema": "0.4.0",
-    "tslib": "2.6.2"
+    "tslib": "2.6.3"
   },
   "devDependencies": {
     "eslint": "8.57.0",
-    "rimraf": "3.0.2",
+    "rimraf": "6.0.1",
     "typescript": "5.4.2"
   }
 }

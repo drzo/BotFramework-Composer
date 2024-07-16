@@ -52,7 +52,7 @@
     "postcss-loader": "^3.0.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
-    "rimraf": "3.0.2",
+    "rimraf": "6.0.1",
     "style-loader": "^0.23.1",
     "ts-loader": "9.5.1",
     "url-loader": "^1.1.2",
@@ -72,7 +72,7 @@
     "monaco-languageclient": "0.10.2",
     "normalize-url": "^4.5.1",
     "reconnecting-websocket": "^3.2.2",
-    "tslib": "2.6.2",
+    "tslib": "2.6.3",
     "vscode-ws-jsonrpc": "^0.1.1"
   }
 }
