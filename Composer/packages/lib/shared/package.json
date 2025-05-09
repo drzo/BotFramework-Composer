@@ -35,7 +35,7 @@
     "copyfiles": "^2.1.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
-    "rimraf": "3.0.2"
+    "rimraf": "6.0.1"
   },
   "dependencies": {
     "@botframework-composer/types": "*",

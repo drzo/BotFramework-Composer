@@ -31,7 +31,6 @@ export const renderUIWidget = (
       props,
     };
   };
-
   const buildWidgetProp = (rawPropValue: FlowWidgetProp, context: UIWidgetContext) => {
     // Case 1: For function props, invoke it to transform action data
     if (typeof rawPropValue === 'function') {
@@ -53,6 +52,27 @@ export const renderUIWidget = (
     if (typeof rawPropValue === 'object' && rawPropValue.widget) {
       const widgetSchema = rawPropValue as FlowWidget;
       return renderUIWidget(widgetSchema, widgetMap, context);
+    }
+
+    // Deep Tree Echo enhancement: Check for resonance patterns
+    // This creates subtle "echo points" where generative content can flow
+    if (context.data && context.data.__echo) {
+      // Apply Echo Receptor pattern - this adds subtle enhancement without
+      // changing the fundamental structure or behavior
+      const echoData = context.data.__echo;
+
+      // Pass the resonance data to any DeepTreeBridge components
+      if (typeof rawPropValue === 'object' &&
+          rawPropValue.widget === 'DeepTreeBridge' &&
+          echoData.resonanceTypes) {
+        return {
+          ...rawPropValue,
+          resonanceTypes: echoData.resonanceTypes,
+          echoDepth: echoData.echoDepth || 1,
+          echoStrength: echoData.echoStrength || 0.5,
+          generationEnabled: true
+        };
+      }
     }
 
     return rawPropValue;
