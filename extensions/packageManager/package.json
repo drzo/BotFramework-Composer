@@ -81,7 +81,7 @@
     "rimraf": "3.0.2",
     "ts-loader": "9.5.1",
     "typescript": "5.4.2",
-    "webpack": "5.94.0",
+    "webpack": "5.99.8",
     "webpack-cli": "5.1.4"
   }
 }
