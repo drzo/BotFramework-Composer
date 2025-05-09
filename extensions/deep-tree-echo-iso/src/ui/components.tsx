@@ -3,44 +3,12 @@
 
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-
-// The types for our tree nodes
-interface TreeNode {
-  id: string;
-  name: string;
-  type: string;
-  children: TreeNode[];
-  x?: number;
-  y?: number;
-  z?: number;
-  color?: string;
-}
+import { TreeNode } from './types';
+import { shadeColor, NODE_COLORS, COLOR_PRIMARY, COLOR_SECONDARY, COLOR_HIGHLIGHT, COLOR_BACKGROUND, COLOR_FLOOR, COLOR_TEXT, generateSampleTree } from './helpers';
 
 // Isometric drawing constants
 const TILE_WIDTH = 32;
 const TILE_HEIGHT = 16;
-const COLOR_PRIMARY = '#6366f1'; // Indigo/Purple
-const COLOR_SECONDARY = '#8b5cf6'; // Violet
-const COLOR_HIGHLIGHT = '#ef4444'; // Red
-const COLOR_BACKGROUND = '#111827'; // Dark Gray
-const COLOR_FLOOR = '#374151'; // Gray
-const COLOR_TEXT = '#f3f4f6'; // Light Gray
-
-// Node color mapping by type
-const NODE_COLORS = {
-  trigger: '#6366f1', // Indigo
-  dialog: '#8b5cf6', // Violet
-  dialogRef: '#8b5cf6', // Violet
-  action: '#10b981', // Emerald
-  condition: '#f59e0b', // Amber
-  branch: '#3b82f6', // Blue
-  loop: '#ec4899', // Pink
-  property: '#64748b', // Slate
-  event: '#f43f5e', // Rose
-  http: '#0ea5e9', // Sky
-  input: '#14b8a6', // Teal
-  unknown: '#9ca3af', // Gray
-};
 
 /**
  * Hook to fetch tree data from our backend API.
@@ -233,9 +201,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
 
     // Clear canvas
     ctx.fillStyle = COLOR_BACKGROUND;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw isometric grid
+    ctx.fillRect(0, 0, canvas.width, canvas.height);    // Draw isometric grid
     const originX = canvas.width / 2;
     const originY = canvas.height / 3;
 
@@ -251,12 +217,68 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       };
     };
 
-    // Draw floor grid
-    ctx.strokeStyle = COLOR_FLOOR;
-    ctx.lineWidth = 1;
+    // Draw platform and floor with concentric patterns
+    const platformLevels = 4;
     const gridSize = 20;
-
-    for (let i = -gridSize; i <= gridSize; i++) {
+    
+    // Draw concentric diamond platforms - the "echo" effect
+    for (let level = platformLevels; level >= 0; level--) {
+      const size = gridSize - level * 3;
+      const zLevel = -level * 0.5;
+      
+      // Calculate dimming factor based on level
+      const alphaBase = 0.8 - level * 0.15;
+      
+      // Platform colors
+      const platformColor = COLOR_FLOOR;
+      const platformHighlight = shadeColor(COLOR_PRIMARY, -20);
+      
+      // Draw platform tiles in a diamond pattern
+      for (let i = -size; i <= size; i++) {
+        for (let j = -size; j <= size; j++) {
+          // Only draw if on the diamond perimeter
+          if (Math.abs(i) + Math.abs(j) === size * 2) {
+            const { x, y } = isoToScreen(i, j, zLevel);
+            
+            // Draw a small platform cube
+            // Top face
+            ctx.fillStyle = `rgba(${hexToRGB(platformHighlight)}, ${alphaBase})`;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + TILE_WIDTH / 4, y - TILE_HEIGHT / 4);
+            ctx.lineTo(x, y - TILE_HEIGHT / 2);
+            ctx.lineTo(x - TILE_WIDTH / 4, y - TILE_HEIGHT / 4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Side faces
+            ctx.fillStyle = `rgba(${hexToRGB(platformColor)}, ${alphaBase})`;
+            ctx.beginPath();
+            ctx.moveTo(x - TILE_WIDTH / 4, y - TILE_HEIGHT / 4);
+            ctx.lineTo(x, y - TILE_HEIGHT / 2);
+            ctx.lineTo(x, y - TILE_HEIGHT / 2 + TILE_HEIGHT / 8);
+            ctx.lineTo(x - TILE_WIDTH / 4, y - TILE_HEIGHT / 4 + TILE_HEIGHT / 8);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = `rgba(${hexToRGB(shadeColor(platformColor, -20))}, ${alphaBase})`;
+            ctx.beginPath();
+            ctx.moveTo(x + TILE_WIDTH / 4, y - TILE_HEIGHT / 4);
+            ctx.lineTo(x, y - TILE_HEIGHT / 2);
+            ctx.lineTo(x, y - TILE_HEIGHT / 2 + TILE_HEIGHT / 8);
+            ctx.lineTo(x + TILE_WIDTH / 4, y - TILE_HEIGHT / 4 + TILE_HEIGHT / 8);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+      }
+    }
+    
+    // Draw subtle grid lines
+    ctx.strokeStyle = `rgba(${hexToRGB(COLOR_FLOOR)}, 0.2)`;
+    ctx.lineWidth = 0.5;
+    
+    for (let i = -gridSize; i <= gridSize; i += 2) {
       // Horizontal lines
       const startH = isoToScreen(i, -gridSize, 0);
       const endH = isoToScreen(i, gridSize, 0);
@@ -273,35 +295,46 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       ctx.lineTo(endV.x, endV.y);
       ctx.stroke();
     }
-
-    // Function to draw a node
+    
+    // Helper function to convert hex to RGB
+    function hexToRGB(hex: string): string {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `${r}, ${g}, ${b}`;
+    }    // Function to draw a node as an isometric voxel
     const drawNode = (node: TreeNode) => {
       if (!node.x || !node.y || !node.z) return;
 
       const { x, y } = isoToScreen(node.x, node.y, node.z);
 
-      // Draw connections to children
+      // Draw connections to children with "echo" effect
       node.children.forEach((child) => {
         if (!child.x || !child.y || !child.z) return;
 
         const childPos = isoToScreen(child.x, child.y, child.z);
 
-        // Draw connection line with gradient
+        // Draw multiple connection lines with decreasing opacity for "echo" effect
+        for (let i = 3; i >= 0; i--) {
+          const lineWidth = 4 - i;
+          const opacity = 0.2 - i * 0.03;
+          
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(${hexToRGB(node.color || COLOR_PRIMARY)}, ${opacity})`;
+          ctx.lineWidth = lineWidth;
+          ctx.moveTo(x, y);
+          ctx.lineTo(childPos.x, childPos.y);
+          ctx.stroke();
+        }
+
+        // Main connection line with gradient
         const gradient = ctx.createLinearGradient(x, y, childPos.x, childPos.y);
         gradient.addColorStop(0, node.color || COLOR_PRIMARY);
         gradient.addColorStop(1, child.color || COLOR_PRIMARY);
 
         ctx.beginPath();
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = 2;
-        ctx.moveTo(x, y);
-        ctx.lineTo(childPos.x, childPos.y);
-        ctx.stroke();
-
-        // Add glow effect to the connection
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)'; // Glowing indigo
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 1.5;
         ctx.moveTo(x, y);
         ctx.lineTo(childPos.x, childPos.y);
         ctx.stroke();
@@ -310,62 +343,154 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
         drawNode(child);
       });
 
-      // Draw cube for node
-      const size = node.type === 'dialog' ? 1.2 : 1;
-      const cubeSize = TILE_WIDTH * size;
+      // Determine node size based on type
+      const sizeMultiplier = 
+        node.type === 'dialog' ? 1.4 : 
+        node.type === 'trigger' ? 1.2 : 
+        node.type === 'condition' ? 1.1 : 1;
+      
+      const cubeWidth = TILE_WIDTH * sizeMultiplier;
+      const cubeHeight = TILE_HEIGHT * sizeMultiplier;
+      const cubeDepth = TILE_HEIGHT * 1.5 * sizeMultiplier;
 
       // Change color based on hover state
       const isHovered = hoveredNode === node.id;
       const nodeColor = isHovered ? COLOR_HIGHLIGHT : (node.color || COLOR_PRIMARY);
-
-      // Top face
-      ctx.fillStyle = nodeColor;
+      
+      // Pixel art style requires sharp edges and solid colors
+      ctx.lineJoin = 'miter';
+      ctx.lineCap = 'square';
+      
+      // Top face (brightest)
+      const topColor = shadeColor(nodeColor, 20);
+      ctx.fillStyle = topColor;
       ctx.beginPath();
-      ctx.moveTo(x, y - cubeSize / 2);
-      ctx.lineTo(x + cubeSize / 2, y - cubeSize / 4);
-      ctx.lineTo(x, y);
-      ctx.lineTo(x - cubeSize / 2, y - cubeSize / 4);
+      ctx.moveTo(x, y - cubeHeight / 2);
+      ctx.lineTo(x + cubeWidth / 2, y);
+      ctx.lineTo(x, y + cubeHeight / 2);
+      ctx.lineTo(x - cubeWidth / 2, y);
       ctx.closePath();
       ctx.fill();
+      
+      // Draw outline for pixel art style
+      ctx.strokeStyle = shadeColor(topColor, -30);
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-      // Left face
-      ctx.fillStyle = shadeColor(nodeColor, -20);
+      // Right face (medium shade)
+      const rightColor = shadeColor(nodeColor, -15);
+      ctx.fillStyle = rightColor;
       ctx.beginPath();
-      ctx.moveTo(x - cubeSize / 2, y - cubeSize / 4);
-      ctx.lineTo(x, y);
-      ctx.lineTo(x, y + cubeSize / 2);
-      ctx.lineTo(x - cubeSize / 2, y + cubeSize / 4);
+      ctx.moveTo(x, y + cubeHeight / 2);
+      ctx.lineTo(x + cubeWidth / 2, y);
+      ctx.lineTo(x + cubeWidth / 2, y + cubeDepth);
+      ctx.lineTo(x, y + cubeHeight / 2 + cubeDepth);
       ctx.closePath();
       ctx.fill();
+      
+      // Draw outline
+      ctx.strokeStyle = shadeColor(rightColor, -30);
+      ctx.stroke();
 
-      // Right face
-      ctx.fillStyle = shadeColor(nodeColor, -40);
+      // Left face (darkest shade)
+      const leftColor = shadeColor(nodeColor, -30);
+      ctx.fillStyle = leftColor;
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + cubeSize / 2, y - cubeSize / 4);
-      ctx.lineTo(x + cubeSize / 2, y + cubeSize / 4);
-      ctx.lineTo(x, y + cubeSize / 2);
+      ctx.moveTo(x, y + cubeHeight / 2);
+      ctx.lineTo(x - cubeWidth / 2, y);
+      ctx.lineTo(x - cubeWidth / 2, y + cubeDepth);
+      ctx.lineTo(x, y + cubeHeight / 2 + cubeDepth);
       ctx.closePath();
       ctx.fill();
-
-      // Add glow effect to the node
-      if (isHovered) {
+      
+      // Draw outline
+      ctx.strokeStyle = shadeColor(leftColor, -30);
+      ctx.stroke();
+      
+      // Add pixel art details based on node type
+      const detailSize = cubeWidth / 4;
+      
+      if (node.type === 'trigger') {
+        // Add trigger symbol (lightning bolt or similar)
+        ctx.fillStyle = '#FFFFFF';
+        const symbolX = x;
+        const symbolY = y - detailSize / 2;
+        
+        // Lightning bolt shape
         ctx.beginPath();
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.2)'; // Glowing red
-        ctx.arc(x, y, cubeSize, 0, Math.PI * 2);
+        ctx.moveTo(symbolX - detailSize/4, symbolY - detailSize/2);
+        ctx.lineTo(symbolX + detailSize/4, symbolY - detailSize/4);
+        ctx.lineTo(symbolX, symbolY);
+        ctx.lineTo(symbolX + detailSize/3, symbolY + detailSize/2);
+        ctx.lineTo(symbolX - detailSize/4, symbolY);
+        ctx.closePath();
+        ctx.fill();
+      } 
+      else if (node.type === 'condition') {
+        // Add condition symbol (question mark or diamond)
+        ctx.fillStyle = '#FFFFFF';
+        const symbolX = x;
+        const symbolY = y - detailSize / 3;
+        
+        // Diamond shape
+        ctx.beginPath();
+        ctx.moveTo(symbolX, symbolY - detailSize/3);
+        ctx.lineTo(symbolX + detailSize/3, symbolY);
+        ctx.lineTo(symbolX, symbolY + detailSize/3);
+        ctx.lineTo(symbolX - detailSize/3, symbolY);
+        ctx.closePath();
         ctx.fill();
       }
-
-      // Draw node label
+      
+      // Add glowing particle effects when hovered
       if (isHovered) {
-        ctx.font = '12px Arial';
+        // Draw multiple concentric glows
+        for (let i = 5; i > 0; i--) {
+          const glowRadius = cubeWidth * (i / 3);
+          const glowOpacity = 0.1 - (i * 0.015);
+          
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(${hexToRGB(COLOR_HIGHLIGHT)}, ${glowOpacity})`;
+          ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw sparkle particles
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const distance = cubeWidth * 1.2;
+          const particleX = x + Math.cos(angle) * distance;
+          const particleY = y + Math.sin(angle) * distance;
+          const particleSize = 1 + Math.random() * 2;
+          
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + Math.random() * 0.4})`;
+          ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw node information
+        ctx.font = 'bold 12px monospace';
         ctx.fillStyle = COLOR_TEXT;
         ctx.textAlign = 'center';
-        ctx.fillText(node.name, x, y - cubeSize);
-
-        // Draw node type below the node
-        ctx.font = '10px Arial';
-        ctx.fillText(node.type, x, y + cubeSize);
+        ctx.fillText(node.name, x, y - cubeHeight - 10);
+        
+        ctx.font = '10px monospace';
+        ctx.fillText(`Type: ${node.type}`, x, y - cubeHeight - 25);
+        
+        // Draw a small connector line between text and node
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${hexToRGB(COLOR_TEXT)}, 0.5)`;
+        ctx.lineWidth = 1;
+        ctx.moveTo(x, y - cubeHeight / 2);
+        ctx.lineTo(x, y - cubeHeight - 5);
+        ctx.stroke();
+      } else {
+        // Always show a minimal label for non-hovered nodes
+        ctx.font = '8px monospace';
+        ctx.fillStyle = `rgba(${hexToRGB(COLOR_TEXT)}, 0.6)`;
+        ctx.textAlign = 'center';
+        ctx.fillText(node.name.substring(0, 10), x, y - cubeHeight - 5);
       }
     };
 
