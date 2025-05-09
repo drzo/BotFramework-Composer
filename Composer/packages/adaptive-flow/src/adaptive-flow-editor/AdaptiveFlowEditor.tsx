@@ -4,7 +4,7 @@
 /** @jsx jsx */
 import { jsx, css, CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import isEqual from 'lodash/isEqual';
 import formatMessage from 'format-message';
 import { DialogFactory, MicrosoftIDialog, SchemaDefinitions } from '@bfc/shared';
@@ -13,6 +13,10 @@ import { MarqueeSelection } from '@fluentui/react/lib/MarqueeSelection';
 
 import { NodeEventTypes } from '../adaptive-flow-renderer/constants/NodeEventTypes';
 import { AdaptiveDialog } from '../adaptive-flow-renderer/adaptive/AdaptiveDialog';
+import { echoService } from '../adaptive-flow-renderer/services/DeepTreeEchoService';
+import { transformEchoReceptor } from '../adaptive-flow-renderer/transformers/transformEchoReceptor';
+import { GenerativeSuggestionDialog } from '../adaptive-flow-renderer/components/GenerativeSuggestionDialog';
+import { EchoSuggestion, EchoResponse } from '../adaptive-flow-renderer/services/DeepTreeEchoService';
 
 import { NodeRendererContext, NodeRendererContextValue } from './contexts/NodeRendererContext';
 import { SelfHostContext } from './contexts/SelfHostContext';
@@ -30,6 +34,7 @@ import {
 } from './renderers';
 import { useFlowUIOptions } from './hooks/useFlowUIOptions';
 import { FlowToolbar } from './components/FlowToolbar';
+import { useDeepTreeEcho } from '../adaptive-flow-renderer/hooks/useDeepTreeEcho';
 
 formatMessage.setup({
   missingTranslation: 'ignore',
@@ -83,6 +88,10 @@ const VisualDesigner: React.FC<VisualDesignerProps> = ({ onFocus, onBlur, schema
 
   const dataCache = useRef({});
 
+  // State for generative suggestion dialog
+  const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState('');
+
   /**
    * VisualDesigner is coupled with ShellApi where input json always mutates.
    * Deep checking input data here to make React change detection works.
@@ -129,12 +138,90 @@ const VisualDesigner: React.FC<VisualDesignerProps> = ({ onFocus, onBlur, schema
     divRef.current?.focus();
   }, [focusedEvent]);
 
-  const { selection, ...selectionContext } = useSelectionEffect({ data, nodeContext }, shellApi);
-  const { handleEditorEvent } = useEditorEventApi({ path: dialogId, data, nodeContext, selectionContext }, shellApi);
+  const { selection, ...selectionContext } = useSelectionEffect({ data, nodeContext }, shellApi);  const { handleEditorEvent } = useEditorEventApi({ path: dialogId, data, nodeContext, selectionContext }, shellApi);
 
   const handleCommand: KeyboardCommandHandler = (command) => {
     const editorEvent = mapKeyboardCommandToEditorEvent(command);
     editorEvent && handleEditorEvent(editorEvent.type, editorEvent.payload);
+  };
+
+  // Deep Tree Echo Integration - Initialize the service when the editor loads
+  useEffect(() => {
+    if (!echoService.isInitialized) {
+      echoService.initialize().catch(console.error);
+      console.log('Deep Tree Echo Pattern: Service initialization triggered');
+    }
+  }, []);  // Enhanced event handler that intercepts events related to echo points
+  const handleEnhancedEditorEvent = (eventName: NodeEventTypes, eventData: any) => {
+    // Handle normal editor events
+    handleEditorEvent(eventName, eventData);
+
+    // Look for echo-related events
+    if (eventName === NodeEventTypes.Focus && eventData && eventData.data && eventData.data.__echo) {
+      const { id, data: nodeData } = eventData;
+      const echoData = eventData.data.__echo;
+
+      // Register this node with the Echo service
+      if (echoData.activated) {
+        echoService.registerReceptor({
+          nodeId: id,
+          dialogData: nodeData,
+          resonanceTypes: echoData.resonanceTypes || [],
+          echoDepth: echoData.echoDepth || 1,
+          echoStrength: echoData.echoStrength || 0.5
+        });
+
+        // Generate suggestions for this node
+        echoService.generateSuggestions(id).then(suggestions => {
+          if (suggestions) {
+            // In a real implementation, we would show these suggestions to the user
+            console.log('Deep Tree Echo Pattern: Suggestions generated', suggestions);
+          }
+        });
+      } else {
+        echoService.unregisterReceptor(id);
+      }
+    }
+
+    // Handle suggestion dialog open event
+    if (eventName === NodeEventTypes.OpenSuggestionDialog && eventData && eventData.id) {
+      setSelectedNodeId(eventData.id);
+      setSuggestionDialogOpen(true);
+    }
+  };
+
+  // Handle applying a suggestion
+  const handleApplySuggestion = (suggestion: EchoSuggestion) => {
+    if (!selectedNodeId) return;
+
+    // For demo purposes, log the suggestion
+    console.log('Applying suggestion to node', selectedNodeId, suggestion);
+
+    // The actual application would depend on the suggestion type and content
+    // In a real implementation, we would modify the dialog structure based on the suggestion
+
+    // Example: Add a new action to a dialog
+    if (suggestion.type === 'branch' && suggestion.content.newBranch) {
+      const path = `${dialogId}#${selectedNodeId}`;
+      const propertyName = 'actions';
+
+      // Use shellApi to update the dialog
+      shellApi.updateAction(path, propertyName, suggestion.content.newBranch);
+    }
+
+    // Example: Enhance existing content (for TextInput, etc.)
+    if (suggestion.type === 'enhancement' && suggestion.content.rephrasing) {
+      const path = `${dialogId}#${selectedNodeId}`;
+
+      // Use shellApi to update the dialog property
+      // This is simplified - in reality, you'd need to determine which property to update
+      shellApi.updateActionProperty(path, 'prompt', suggestion.content.rephrasing);
+    }
+  };
+
+  // Function to fetch suggestions for a node
+  const fetchSuggestions = (nodeId: string): Promise<EchoResponse | null> => {
+    return echoService.generateSuggestions(nodeId);
   };
 
   return (
@@ -166,14 +253,12 @@ const VisualDesigner: React.FC<VisualDesignerProps> = ({ onFocus, onBlur, schema
                       height: '100%',
                       padding: '48px 20px',
                       boxSizing: 'border-box',
-                    }}
-                    data-testid="flow-editor-container"
+                    }}                    data-testid="flow-editor-container"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEditorEvent(NodeEventTypes.Focus, { id: '' });
+                      handleEnhancedEditorEvent(NodeEventTypes.Focus, { id: '' });
                     }}
-                  >
-                    <AdaptiveDialog
+                  >                    <AdaptiveDialog
                       activeTrigger={focusedEvent}
                       dialogData={data}
                       dialogId={dialogId}
@@ -188,15 +273,23 @@ const VisualDesigner: React.FC<VisualDesignerProps> = ({ onFocus, onBlur, schema
                       widgets={widgetsFromPlugins}
                       onEvent={(eventName, eventData) => {
                         divRef.current?.focus({ preventScroll: true });
-                        handleEditorEvent(eventName, eventData);
+                        handleEnhancedEditorEvent(eventName, eventData);
                       }}
                     />
-                  </div>
-                </MarqueeSelection>
+                  </div>                </MarqueeSelection>
               </SelectionContext.Provider>
             </FlowToolbar>
           </div>
         </SelfHostContext.Provider>
+
+        {/* Generative Suggestion Dialog */}
+        <GenerativeSuggestionDialog
+          nodeId={selectedNodeId}
+          isOpen={suggestionDialogOpen}
+          onDismiss={() => setSuggestionDialogOpen(false)}
+          onApplySuggestion={handleApplySuggestion}
+          fetchSuggestions={fetchSuggestions}
+        />
       </NodeRendererContext.Provider>
     </CacheProvider>
   );

@@ -22,16 +22,16 @@
     "@bfc/shared": "*",
     "@microsoft/bf-cli-command": "4.14.0-dev.20210604.3f9ee15",
     "@microsoft/bf-lu": "4.15.0-dev.20210702.cbf708d",
-    "express": "4.17.3",
+    "express": "4.20.0",
     "monaco-languageclient": "0.10.2",
     "normalize-url": "^4.5.1",
     "reconnecting-websocket": "^3.2.2",
-    "tslib": "2.6.2",
+    "tslib": "2.6.3",
     "vscode": "^1.1.34",
     "vscode-json-languageservice": "^3.3.1",
     "vscode-languageserver": "5.3.0-next.10",
     "vscode-ws-jsonrpc": "^0.1.1",
-    "ws": "^7.4.6"
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@botframework-composer/test-utils": "*",
@@ -44,7 +44,7 @@
     "ts-loader": "9.5.1",
     "ts-node": "^8.3.0",
     "typescript": "5.4.2",
-    "webpack": "^4.43.0",
+    "webpack": "^5.99.8",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^4.2.2"

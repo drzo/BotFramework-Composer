@@ -16,6 +16,7 @@ import {
   PropertyDescription,
   ResourceOperation,
 } from '../widgets';
+import { DeepTreeBridge } from '../widgets/DeepTreeBridge';
 
 const builtinActionWidgets: FlowEditorWidgetMap = {
   ActionCard,
@@ -29,6 +30,7 @@ const builtinActionWidgets: FlowEditorWidgetMap = {
   PropertyDescription,
   ResourceOperation,
   ListOverview,
+  DeepTreeBridge, // Our neural bridge for Deep Tree Echo integration
 };
 
 export default builtinActionWidgets;
