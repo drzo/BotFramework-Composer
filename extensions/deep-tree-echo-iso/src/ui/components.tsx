@@ -168,24 +168,110 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // Animation loop
+  // Handle mouse interaction for node hover and selection
   useEffect(() => {
-    let animationFrameId: number;
-
-    const animate = () => {
-      if (rotating) {
-        setAngle((prev) => (prev + 0.005) % (Math.PI * 2));
+    if (!canvasRef.current || !tree) return;
+    
+    const canvas = canvasRef.current;
+    
+    // Helper function to find the node under the mouse cursor
+    const findNodeAtPosition = (x: number, y: number) => {
+      // Convert screen coordinates to isometric space (approximation)
+      const screenToIso = (screenX: number, screenY: number) => {
+        const originX = canvas.width / 2;
+        const originY = canvas.height / 3;
+        
+        // Adjust for canvas position and scaling
+        const canvasRect = canvas.getBoundingClientRect();
+        const canvasX = (screenX - canvasRect.left) * (canvas.width / canvasRect.width);
+        const canvasY = (screenY - canvasRect.top) * (canvas.height / canvasRect.height);
+        
+        // Apply rotation matrix inverse (simplified)
+        const dx = canvasX - originX;
+        const dy = canvasY - originY;
+        
+        // This is a simplified inverse transform that works for hover detection
+        const approxScreenZ = 0; // We prioritize nodes at the front
+        
+        return { dx, dy, approxScreenZ };
+      };
+      
+      // Convert mouse position to approximate isometric position
+      const { dx, dy } = screenToIso(x, y);
+      
+      // Find all nodes and sort by Z (depth) to prioritize front nodes
+      const allNodes: TreeNode[] = [];
+      
+      const collectNodes = (node: TreeNode) => {
+        if (node.x !== undefined && node.y !== undefined && node.z !== undefined) {
+          allNodes.push(node);
+        }
+        node.children.forEach(collectNodes);
+      };
+      
+      collectNodes(tree);
+      
+      // Sort by Z, highest Z (closest to viewer) first
+      allNodes.sort((a, b) => (b.z || 0) - (a.z || 0));
+      
+      // Check each node in Z order (front to back)
+      for (const node of allNodes) {
+        const { x: nodeScreenX, y: nodeScreenY } = isoToScreen(node.x || 0, node.y || 0, node.z || 0);
+        
+        // Calculate node size based on type
+        const sizeMultiplier = 
+          node.type === 'dialog' ? 1.4 : 
+          node.type === 'trigger' ? 1.2 : 
+          node.type === 'condition' ? 1.1 : 1;
+          
+        const nodeRadius = TILE_WIDTH * sizeMultiplier * 0.75;
+        
+        // Check if mouse is within node bounds (using a simple circular hit area)
+        const distanceSquared = (nodeScreenX - dx - canvas.width/2) ** 2 + (nodeScreenY - dy - canvas.height/3) ** 2;
+        if (distanceSquared <= nodeRadius ** 2) {
+          return node.id;
+        }
       }
-      animationFrameId = requestAnimationFrame(animate);
+      
+      return null;
     };
-
-    animate();
-
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const hoveredNodeId = findNodeAtPosition(e.clientX, e.clientY);
+      if (hoveredNodeId !== hoveredNode) {
+        setHoveredNode(hoveredNodeId);
+      }
+    };
+    
+    canvas.addEventListener('mousemove', handleMouseMove);
+    
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      canvas.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [rotating]);
+  }, [tree, hoveredNode, angle]);
+
+  // Helper function for converting hex to RGB
+  const hexToRGB = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
+  };
+
+  // Convert isometric coordinates to screen coordinates
+  const isoToScreen = (x: number, y: number, z: number) => {
+    // Apply rotation around the z-axis
+    const rotatedX = x * Math.cos(angle) - y * Math.sin(angle);
+    const rotatedY = x * Math.sin(angle) + y * Math.cos(angle);
+
+    const originX = dimensions.width / 2;
+    const originY = dimensions.height / 3;
+
+    return {
+      x: originX + (rotatedX - rotatedY) * TILE_WIDTH / 2,
+      y: originY + (rotatedX + rotatedY) * TILE_HEIGHT / 2 - z * TILE_HEIGHT * 2,
+    };
+  };
 
   // Drawing function
   useEffect(() => {
