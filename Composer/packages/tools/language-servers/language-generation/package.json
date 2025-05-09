@@ -27,11 +27,11 @@
     "@botframework-composer/test-utils": "*",
     "@types/node": "13.9.3",
     "cross-env": "7.0.3",
-    "express": "4.17.3",
+    "express": "4.20.0",
     "rimraf": "6.0.1",
     "ts-node": "^8.4.1",
     "typescript": "5.4.2",
     "vscode-ws-jsonrpc": "^0.1.1",
-    "ws": "^7.4.6"
+    "ws": "^8.18.2"
   }
 }
