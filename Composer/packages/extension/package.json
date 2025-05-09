@@ -31,7 +31,7 @@
     "fs-extra": "^9.0.1",
     "globby": "^11.0.0",
     "node-fetch": "^2.6.1",
-    "passport": "^0.4.1",
+    "passport": "^0.7.0",
     "path-to-regexp": "^6.1.0",
     "tar": "^6.1.6",
     "tslib": "2.6.3"
