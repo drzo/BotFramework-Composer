@@ -38,11 +38,20 @@
   "github.copilot.chat.languageContext.inline.typescript.enabled": true,
   "github.copilot.chat.languageContext.typescript.enabled": true,
   "github.copilot.chat.search.keywordSuggestions": true,
-  "chat.agent.maxRequests": 0,
   "github.copilot.chat.codesearch.enabled": true,
   "github.copilot.chat.reviewSelection.instructions": [
     {
       "file": ".copilot-review-instructions.md"
     }
-  ]
+  ],
+  "github.copilot.nextEditSuggestions.fixes": true,
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "githubPullRequests.experimental.chat": true,
+  "githubPullRequests.experimental.notificationsView": true,
+  "githubPullRequests.experimental.useQuickChat": true,
+  "python.analysis.aiCodeActions": {
+    "enabled": true,
+    "mode": "preview"
+  },
+  "chat.agent.maxRequests": 45
 }
