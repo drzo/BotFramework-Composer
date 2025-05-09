@@ -11,3 +11,4 @@ export { ActionHeader } from './ActionHeader';
 export { ActionGroup } from './ActionGroup';
 export { PropertyDescription } from './PropertyDescription';
 export { ResourceOperation } from './ResourceOperation';
+export { DeepTreeBridge } from './DeepTreeBridge'; // Neural bridge for Deep Tree Echo

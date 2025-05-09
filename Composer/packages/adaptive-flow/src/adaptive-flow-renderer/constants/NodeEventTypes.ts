@@ -21,6 +21,8 @@ export enum NodeEventTypes {
   InsertSelection = 'event.data.paste-selection--menu',
   Undo = 'event.operation.undo',
   Redo = 'event.operation.redo',
+  // Deep Tree Echo events
+  OpenSuggestionDialog = 'event.echo.open-suggestion-dialog',
 }
 
 export type EditorEventHandler = (eventType: NodeEventTypes, eventData: any) => any;
