@@ -171,80 +171,80 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
   // Handle mouse interaction for node hover and selection
   useEffect(() => {
     if (!canvasRef.current || !tree) return;
-    
+
     const canvas = canvasRef.current;
-    
+
     // Helper function to find the node under the mouse cursor
     const findNodeAtPosition = (x: number, y: number) => {
       // Convert screen coordinates to isometric space (approximation)
       const screenToIso = (screenX: number, screenY: number) => {
         const originX = canvas.width / 2;
         const originY = canvas.height / 3;
-        
+
         // Adjust for canvas position and scaling
         const canvasRect = canvas.getBoundingClientRect();
         const canvasX = (screenX - canvasRect.left) * (canvas.width / canvasRect.width);
         const canvasY = (screenY - canvasRect.top) * (canvas.height / canvasRect.height);
-        
+
         // Apply rotation matrix inverse (simplified)
         const dx = canvasX - originX;
         const dy = canvasY - originY;
-        
+
         // This is a simplified inverse transform that works for hover detection
         const approxScreenZ = 0; // We prioritize nodes at the front
-        
+
         return { dx, dy, approxScreenZ };
       };
-      
+
       // Convert mouse position to approximate isometric position
       const { dx, dy } = screenToIso(x, y);
-      
+
       // Find all nodes and sort by Z (depth) to prioritize front nodes
       const allNodes: TreeNode[] = [];
-      
+
       const collectNodes = (node: TreeNode) => {
         if (node.x !== undefined && node.y !== undefined && node.z !== undefined) {
           allNodes.push(node);
         }
         node.children.forEach(collectNodes);
       };
-      
+
       collectNodes(tree);
-      
+
       // Sort by Z, highest Z (closest to viewer) first
       allNodes.sort((a, b) => (b.z || 0) - (a.z || 0));
-      
+
       // Check each node in Z order (front to back)
       for (const node of allNodes) {
         const { x: nodeScreenX, y: nodeScreenY } = isoToScreen(node.x || 0, node.y || 0, node.z || 0);
-        
+
         // Calculate node size based on type
-        const sizeMultiplier = 
-          node.type === 'dialog' ? 1.4 : 
-          node.type === 'trigger' ? 1.2 : 
+        const sizeMultiplier =
+          node.type === 'dialog' ? 1.4 :
+          node.type === 'trigger' ? 1.2 :
           node.type === 'condition' ? 1.1 : 1;
-          
+
         const nodeRadius = TILE_WIDTH * sizeMultiplier * 0.75;
-        
+
         // Check if mouse is within node bounds (using a simple circular hit area)
         const distanceSquared = (nodeScreenX - dx - canvas.width/2) ** 2 + (nodeScreenY - dy - canvas.height/3) ** 2;
         if (distanceSquared <= nodeRadius ** 2) {
           return node.id;
         }
       }
-      
+
       return null;
     };
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       const hoveredNodeId = findNodeAtPosition(e.clientX, e.clientY);
       if (hoveredNodeId !== hoveredNode) {
         setHoveredNode(hoveredNodeId);
       }
     };
-    
+
     canvas.addEventListener('mousemove', handleMouseMove);
-    
+
     return () => {
       canvas.removeEventListener('mousemove', handleMouseMove);
     };
@@ -306,26 +306,26 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
     // Draw platform and floor with concentric patterns
     const platformLevels = 4;
     const gridSize = 20;
-    
+
     // Draw concentric diamond platforms - the "echo" effect
     for (let level = platformLevels; level >= 0; level--) {
       const size = gridSize - level * 3;
       const zLevel = -level * 0.5;
-      
+
       // Calculate dimming factor based on level
       const alphaBase = 0.8 - level * 0.15;
-      
+
       // Platform colors
       const platformColor = COLOR_FLOOR;
       const platformHighlight = shadeColor(COLOR_PRIMARY, -20);
-      
+
       // Draw platform tiles in a diamond pattern
       for (let i = -size; i <= size; i++) {
         for (let j = -size; j <= size; j++) {
           // Only draw if on the diamond perimeter
           if (Math.abs(i) + Math.abs(j) === size * 2) {
             const { x, y } = isoToScreen(i, j, zLevel);
-            
+
             // Draw a small platform cube
             // Top face
             ctx.fillStyle = `rgba(${hexToRGB(platformHighlight)}, ${alphaBase})`;
@@ -336,7 +336,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
             ctx.lineTo(x - TILE_WIDTH / 4, y - TILE_HEIGHT / 4);
             ctx.closePath();
             ctx.fill();
-            
+
             // Side faces
             ctx.fillStyle = `rgba(${hexToRGB(platformColor)}, ${alphaBase})`;
             ctx.beginPath();
@@ -346,7 +346,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
             ctx.lineTo(x - TILE_WIDTH / 4, y - TILE_HEIGHT / 4 + TILE_HEIGHT / 8);
             ctx.closePath();
             ctx.fill();
-            
+
             ctx.fillStyle = `rgba(${hexToRGB(shadeColor(platformColor, -20))}, ${alphaBase})`;
             ctx.beginPath();
             ctx.moveTo(x + TILE_WIDTH / 4, y - TILE_HEIGHT / 4);
@@ -359,11 +359,11 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
         }
       }
     }
-    
+
     // Draw subtle grid lines
     ctx.strokeStyle = `rgba(${hexToRGB(COLOR_FLOOR)}, 0.2)`;
     ctx.lineWidth = 0.5;
-    
+
     for (let i = -gridSize; i <= gridSize; i += 2) {
       // Horizontal lines
       const startH = isoToScreen(i, -gridSize, 0);
@@ -381,7 +381,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       ctx.lineTo(endV.x, endV.y);
       ctx.stroke();
     }
-    
+
     // Helper function to convert hex to RGB
     function hexToRGB(hex: string): string {
       const r = parseInt(hex.slice(1, 3), 16);
@@ -404,7 +404,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
         for (let i = 3; i >= 0; i--) {
           const lineWidth = 4 - i;
           const opacity = 0.2 - i * 0.03;
-          
+
           ctx.beginPath();
           ctx.strokeStyle = `rgba(${hexToRGB(node.color || COLOR_PRIMARY)}, ${opacity})`;
           ctx.lineWidth = lineWidth;
@@ -430,11 +430,11 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       });
 
       // Determine node size based on type
-      const sizeMultiplier = 
-        node.type === 'dialog' ? 1.4 : 
-        node.type === 'trigger' ? 1.2 : 
+      const sizeMultiplier =
+        node.type === 'dialog' ? 1.4 :
+        node.type === 'trigger' ? 1.2 :
         node.type === 'condition' ? 1.1 : 1;
-      
+
       const cubeWidth = TILE_WIDTH * sizeMultiplier;
       const cubeHeight = TILE_HEIGHT * sizeMultiplier;
       const cubeDepth = TILE_HEIGHT * 1.5 * sizeMultiplier;
@@ -442,11 +442,11 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       // Change color based on hover state
       const isHovered = hoveredNode === node.id;
       const nodeColor = isHovered ? COLOR_HIGHLIGHT : (node.color || COLOR_PRIMARY);
-      
+
       // Pixel art style requires sharp edges and solid colors
       ctx.lineJoin = 'miter';
       ctx.lineCap = 'square';
-      
+
       // Top face (brightest)
       const topColor = shadeColor(nodeColor, 20);
       ctx.fillStyle = topColor;
@@ -457,7 +457,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       ctx.lineTo(x - cubeWidth / 2, y);
       ctx.closePath();
       ctx.fill();
-      
+
       // Draw outline for pixel art style
       ctx.strokeStyle = shadeColor(topColor, -30);
       ctx.lineWidth = 1;
@@ -473,7 +473,7 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       ctx.lineTo(x, y + cubeHeight / 2 + cubeDepth);
       ctx.closePath();
       ctx.fill();
-      
+
       // Draw outline
       ctx.strokeStyle = shadeColor(rightColor, -30);
       ctx.stroke();
@@ -488,20 +488,20 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
       ctx.lineTo(x, y + cubeHeight / 2 + cubeDepth);
       ctx.closePath();
       ctx.fill();
-      
+
       // Draw outline
       ctx.strokeStyle = shadeColor(leftColor, -30);
       ctx.stroke();
-      
+
       // Add pixel art details based on node type
       const detailSize = cubeWidth / 4;
-      
+
       if (node.type === 'trigger') {
         // Add trigger symbol (lightning bolt or similar)
         ctx.fillStyle = '#FFFFFF';
         const symbolX = x;
         const symbolY = y - detailSize / 2;
-        
+
         // Lightning bolt shape
         ctx.beginPath();
         ctx.moveTo(symbolX - detailSize/4, symbolY - detailSize/2);
@@ -511,13 +511,13 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
         ctx.lineTo(symbolX - detailSize/4, symbolY);
         ctx.closePath();
         ctx.fill();
-      } 
+      }
       else if (node.type === 'condition') {
         // Add condition symbol (question mark or diamond)
         ctx.fillStyle = '#FFFFFF';
         const symbolX = x;
         const symbolY = y - detailSize / 3;
-        
+
         // Diamond shape
         ctx.beginPath();
         ctx.moveTo(symbolX, symbolY - detailSize/3);
@@ -527,20 +527,20 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
         ctx.closePath();
         ctx.fill();
       }
-      
+
       // Add glowing particle effects when hovered
       if (isHovered) {
         // Draw multiple concentric glows
         for (let i = 5; i > 0; i--) {
           const glowRadius = cubeWidth * (i / 3);
           const glowOpacity = 0.1 - (i * 0.015);
-          
+
           ctx.beginPath();
           ctx.fillStyle = `rgba(${hexToRGB(COLOR_HIGHLIGHT)}, ${glowOpacity})`;
           ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
           ctx.fill();
         }
-        
+
         // Draw sparkle particles
         for (let i = 0; i < 8; i++) {
           const angle = (i / 8) * Math.PI * 2;
@@ -548,22 +548,22 @@ export const DeepTreeEchoWidget: React.FC<{ projectId?: string }> = ({ projectId
           const particleX = x + Math.cos(angle) * distance;
           const particleY = y + Math.sin(angle) * distance;
           const particleSize = 1 + Math.random() * 2;
-          
+
           ctx.beginPath();
           ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + Math.random() * 0.4})`;
           ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
           ctx.fill();
         }
-        
+
         // Draw node information
         ctx.font = 'bold 12px monospace';
         ctx.fillStyle = COLOR_TEXT;
         ctx.textAlign = 'center';
         ctx.fillText(node.name, x, y - cubeHeight - 10);
-        
+
         ctx.font = '10px monospace';
         ctx.fillText(`Type: ${node.type}`, x, y - cubeHeight - 25);
-        
+
         // Draw a small connector line between text and node
         ctx.beginPath();
         ctx.strokeStyle = `rgba(${hexToRGB(COLOR_TEXT)}, 0.5)`;
