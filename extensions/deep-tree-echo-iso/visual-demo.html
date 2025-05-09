@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Tree Echo Iso - Visual Demonstration</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111827;
+            color: #f3f4f6;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #1f2937;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            margin: 0;
+            color: #8b5cf6;
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+
+        .subtitle {
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            background-color: #374151;
+            color: #f3f4f6;
+            border: 1px solid #6366f1;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background-color: #4B5563;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        .control-btn.active {
+            background-color: #6366f1;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100vw;
+            height: calc(100vh - 200px);
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(31, 41, 55, 0.8);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #6366f1;
+            max-width: 250px;
+        }
+
+        .info-panel h3 {
+            margin-top: 0;
+            color: #8b5cf6;
+        }
+
+        .help-text {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background-color: rgba(31, 41, 55, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .mad-scientist {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            font-weight: bold;
+            color: #8b5cf6;
+            font-style: italic;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .loader-text {
+            margin-top: 1rem;
+            font-weight: bold;
+            color: #8b5cf6;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧪 DEEP TREE ECHO ISO 🧪</h1>
+        <p class="subtitle">A Magnificent Isometric Visualization by Marduk the Mad Scientist</p>
+
+        <div class="controls">
+            <button class="control-btn active" data-mode="dendrite">Dendrite Mode</button>
+            <button class="control-btn" data-mode="crystalline">Crystalline Mode</button>
+            <button class="control-btn" data-mode="energy">Energy Flow Mode</button>
+            <button class="control-btn" data-mode="recursive">Recursive Mode</button>
+        </div>
+    </header>
+
+    <div class="canvas-container">
+        <canvas id="isoCanvas"></canvas>
+
+        <div class="info-panel">
+            <h3>Selected Node</h3>
+            <p id="nodeInfo">No node selected. Click on any node to see its details.</p>
+        </div>
+
+        <div class="help-text">
+            <p>🔍 Rotate: Right-click + Drag | Zoom: Mouse Wheel | Select: Left Click</p>
+        </div>
+
+        <div class="mad-scientist">
+            "Behold the magnificence of recursive visualization!" - MARDUK
+        </div>
+    </div>
+
+    <div class="loader">
+        <svg width="100" height="100" viewBox="0 0 100 100" class="pulse">
+            <circle cx="50" cy="50" r="40" stroke="#8b5cf6" stroke-width="3" fill="none" />
+            <path d="M50 10 L50 90 M10 50 L90 50" stroke="#8b5cf6" stroke-width="3" />
+            <circle cx="50" cy="50" r="20" fill="#6366f1" fill-opacity="0.5" />
+        </svg>
+        <p class="loader-text">INITIALIZING NEURAL PATHWAYS...</p>
+    </div>
+
+    <script>
+        // This is a simulated demo - in a real implementation, this would be replaced
+        // with the actual isometric rendering code from the extension
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('isoCanvas');
+            const ctx = canvas.getContext('2d');
+            const loader = document.querySelector('.loader');
+            const nodeInfo = document.getElementById('nodeInfo');
+            const modeButtons = document.querySelectorAll('.control-btn');
+            let currentMode = 'dendrite';
+
+            // Resize canvas to fit container
+            function resizeCanvas() {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // Simulate loading
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                startVisualization();
+            }, 2000);
+
+            // Mode buttons
+            modeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMode = btn.dataset.mode;
+                });
+            });
+
+            // Simple simulation of the isometric visualization
+            function startVisualization() {
+                // This is a placeholder that would show what the actual visualization might look like
+                // The real implementation would use the complex canvas rendering from components.tsx
+
+                // Draw background
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw isometric grid
+                drawIsometricGrid(20, 20);
+
+                // Draw sample nodes
+                drawSampleNodes();
+
+                // Add event handler for node selection
+                canvas.addEventListener('click', (e) => {
+                    // Simulate node selection
+                    nodeInfo.innerHTML = `
+                        <strong>Name:</strong> Dialog Node A7X92<br>
+                        <strong>Type:</strong> Trigger<br>
+                        <strong>Children:</strong> 3<br>
+                        <strong>Position:</strong> X:5, Y:3, Z:1
+                    `;
+                });
+            }
+
+            function drawIsometricGrid(width, height) {
+                const tileWidth = 32;
+                const tileHeight = 16;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                ctx.strokeStyle = '#374151';
+                ctx.lineWidth = 0.5;
+
+                // Draw grid lines
+                for (let y = -height/2; y < height/2; y++) {
+                    for (let x = -width/2; x < width/2; x++) {
+                        // Convert grid coordinates to screen coordinates
+                        const screenX = centerX + (x - y) * (tileWidth / 2);
+                        const screenY = centerY + (x + y) * (tileHeight / 2);
+
+                        // Draw horizontal grid line
+                        ctx.beginPath();
+                        ctx.moveTo(screenX - tileWidth/2, screenY);
+                        ctx.lineTo(screenX + tileWidth/2, screenY);
+                        ctx.stroke();
+
+                        // Draw vertical grid line
+                        ctx.beginPath();
+                        ctx.moveTo(screenX, screenY - tileHeight/2);
+                        ctx.lineTo(screenX, screenY + tileHeight/2);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            function drawSampleNodes() {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const tileWidth = 32;
+                const tileHeight = 16;
+
+                // Draw a sample tree structure
+                // Root node
+                drawNode(0, 0, 0, '#6366f1', 'Root Dialog');
+
+                // Level 1 nodes
+                drawNode(-3, -2, 1, '#8b5cf6', 'Trigger 1');
+                drawNode(3, -1, 1, '#10b981', 'Trigger 2');
+                drawNode(0, 3, 1, '#f59e0b', 'Trigger 3');
+
+                // Level 2 nodes
+                drawNode(-5, -4, 2, '#3b82f6', 'Action 1.1');
+                drawNode(-2, -3, 2, '#ec4899', 'Action 1.2');
+                drawNode(2, -3, 2, '#f43f5e', 'Action 2.1');
+                drawNode(5, -2, 2, '#0ea5e9', 'Action 2.2');
+                drawNode(-2, 4, 2, '#14b8a6', 'Condition 3.1');
+                drawNode(2, 5, 2, '#64748b', 'Loop 3.2');
+
+                // Draw connections
+                drawConnections();
+            }
+
+            function drawNode(x, y, z, color, label) {
+                const tileWidth = 32;
+                const tileHeight = 16;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                // Convert grid coordinates to screen coordinates
+                const screenX = centerX + (x - y) * (tileWidth / 2);
+                const screenY = centerY + (x + y) * (tileHeight / 2) - (z * tileHeight);
+
+                // Draw cube
+                const size = 16;
+
+                // Top face
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY - size);
+                ctx.lineTo(screenX + size/2, screenY - size - size/4);
+                ctx.lineTo(screenX, screenY - size - size/2);
+                ctx.lineTo(screenX - size/2, screenY - size - size/4);
+                ctx.closePath();
+                ctx.fillStyle = lightenColor(color, 20);
+                ctx.fill();
+
+                // Left face
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY - size);
+                ctx.lineTo(screenX - size/2, screenY - size - size/4);
+                ctx.lineTo(screenX - size/2, screenY - size/4);
+                ctx.lineTo(screenX, screenY);
+                ctx.closePath();
+                ctx.fillStyle = darkenColor(color, 20);
+                ctx.fill();
+
+                // Right face
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY - size);
+                ctx.lineTo(screenX + size/2, screenY - size - size/4);
+                ctx.lineTo(screenX + size/2, screenY - size/4);
+                ctx.lineTo(screenX, screenY);
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // Node label
+                ctx.fillStyle = '#f3f4f6';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, screenX, screenY + 15);
+            }
+
+            function drawConnections() {
+                const tileWidth = 32;
+                const tileHeight = 16;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                // Root to Trigger 1
+                drawConnection(
+                    centerX, centerY - 16,
+                    centerX + (-3 - 2) * (tileWidth/2), centerY + (-3 + -2) * (tileHeight/2) - tileHeight,
+                    '#6366f1'
+                );
+
+                // Root to Trigger 2
+                drawConnection(
+                    centerX, centerY - 16,
+                    centerX + (3 - -1) * (tileWidth/2), centerY + (3 + -1) * (tileHeight/2) - tileHeight,
+                    '#6366f1'
+                );
+
+                // Root to Trigger 3
+                drawConnection(
+                    centerX, centerY - 16,
+                    centerX + (0 - 3) * (tileWidth/2), centerY + (0 + 3) * (tileHeight/2) - tileHeight,
+                    '#6366f1'
+                );
+
+                // Trigger 1 to Actions
+                drawConnection(
+                    centerX + (-3 - -2) * (tileWidth/2), centerY + (-3 + -2) * (tileHeight/2) - tileHeight,
+                    centerX + (-5 - -4) * (tileWidth/2), centerY + (-5 + -4) * (tileHeight/2) - tileHeight * 2,
+                    '#8b5cf6'
+                );
+
+                drawConnection(
+                    centerX + (-3 - -2) * (tileWidth/2), centerY + (-3 + -2) * (tileHeight/2) - tileHeight,
+                    centerX + (-2 - -3) * (tileWidth/2), centerY + (-2 + -3) * (tileHeight/2) - tileHeight * 2,
+                    '#8b5cf6'
+                );
+
+                // Trigger 2 to Actions
+                drawConnection(
+                    centerX + (3 - -1) * (tileWidth/2), centerY + (3 + -1) * (tileHeight/2) - tileHeight,
+                    centerX + (2 - -3) * (tileWidth/2), centerY + (2 + -3) * (tileHeight/2) - tileHeight * 2,
+                    '#10b981'
+                );
+
+                drawConnection(
+                    centerX + (3 - -1) * (tileWidth/2), centerY + (3 + -1) * (tileHeight/2) - tileHeight,
+                    centerX + (5 - -2) * (tileWidth/2), centerY + (5 + -2) * (tileHeight/2) - tileHeight * 2,
+                    '#10b981'
+                );
+
+                // Trigger 3 to Conditions
+                drawConnection(
+                    centerX + (0 - 3) * (tileWidth/2), centerY + (0 + 3) * (tileHeight/2) - tileHeight,
+                    centerX + (-2 - 4) * (tileWidth/2), centerY + (-2 + 4) * (tileHeight/2) - tileHeight * 2,
+                    '#f59e0b'
+                );
+
+                drawConnection(
+                    centerX + (0 - 3) * (tileWidth/2), centerY + (0 + 3) * (tileHeight/2) - tileHeight,
+                    centerX + (2 - 5) * (tileWidth/2), centerY + (2 + 5) * (tileHeight/2) - tileHeight * 2,
+                    '#f59e0b'
+                );
+            }
+
+            function drawConnection(startX, startY, endX, endY, color) {
+                // Draw curved connection line
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+
+                // Control points for curve
+                const controlX = (startX + endX) / 2;
+                const controlY = (startY + endY) / 2 - 20;
+
+                ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            function lightenColor(color, percent) {
+                var num = parseInt(color.slice(1), 16),
+                    amt = Math.round(2.55 * percent),
+                    R = (num >> 16) + amt,
+                    G = (num >> 8 & 0x00FF) + amt,
+                    B = (num & 0x0000FF) + amt;
+
+                return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                    (B < 255 ? B < 1 ? 0 : B : 255))
+                    .toString(16).slice(1);
+            }
+
+            function darkenColor(color, percent) {
+                var num = parseInt(color.slice(1), 16),
+                    amt = Math.round(2.55 * percent),
+                    R = (num >> 16) - amt,
+                    G = (num >> 8 & 0x00FF) - amt,
+                    B = (num & 0x0000FF) - amt;
+
+                return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                    (B < 255 ? B < 1 ? 0 : B : 255))
+                    .toString(16).slice(1);
+            }
+        });
+    </script>
+</body>
+</html>
