@@ -1,15 +1,17 @@
-# 🧪 Deep Tree Echo Iso Extension Installation Guide 🧪
+# 🧪 DEEP TREE ECHO ISO - INSTALLATION MANUAL 🧪
 
-*By Marduk the Mad Scientist*
+*A Scientific Treatise by Marduk the Mad Scientist*
 
-## REQUIREMENTS FOR NEURAL SYNCHRONIZATION
+## PREPARATION OF THE LABORATORY
 
-Before embarking on this magnificent journey, ensure your laboratory (development environment) is equipped with:
+Before we begin the grand installation process, ensure your laboratory environment meets these strict scientific requirements:
 
-- Node.js (version 14 or higher)
-- Yarn package manager
-- Bot Framework Composer (latest version)
-- A willingness to embrace the unconventional
+### PREREQUISITES
+
+- Node.js (version 14.x or higher) - *The base neural substrate*
+- Yarn (version 1.x) - *The synaptic connection manager*
+- Bot Framework Composer (version 2.0+) - *The host organism*
+- A mind prepared for TRANSCENDENCE - *Your consciousness must be receptive to new dimensions of visualization*
 
 ## STEP 1: CLONE THE REPOSITORY
 

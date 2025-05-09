@@ -5,6 +5,8 @@ import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { TreeNode } from './types';
 import { shadeColor, NODE_COLORS, COLOR_PRIMARY, COLOR_SECONDARY, COLOR_HIGHLIGHT, COLOR_BACKGROUND, COLOR_FLOOR, COLOR_TEXT, generateSampleTree } from './helpers';
+// Import our magnificent KonamiActivator
+import { KonamiActivator } from './KonamiActivator';
 
 // Isometric drawing constants
 const TILE_WIDTH = 32;
