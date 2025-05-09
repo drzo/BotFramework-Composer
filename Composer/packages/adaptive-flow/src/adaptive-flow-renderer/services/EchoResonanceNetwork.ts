@@ -110,22 +110,23 @@ export class EchoResonanceNetwork {
     // Default to generic connection
     return 'associative';
   }
-
   // Get all nodes that influence a specific node
   getInfluencingNodes(nodeId: string): Array<{node: EchoPatternNode, influence: number}> {
     // Find all links where this node is the target
     const incomingLinks = this.resonanceLinks.filter(link => link.targetId === nodeId);
 
     // Map to node and influence level
-    return incomingLinks.map(link => {
-      const node = this.nodeRegistry.get(link.sourceId);
-      if (!node) return null;
+    return incomingLinks
+      .map(link => {
+        const node = this.nodeRegistry.get(link.sourceId);
+        if (!node) return null;
 
-      return {
-        node,
-        influence: link.strength
-      };
-    }).filter(item => item !== null) as Array<{node: EchoPatternNode, influence: number}>;
+        return {
+          node,
+          influence: link.strength
+        };
+      })
+      .filter((item): item is {node: EchoPatternNode, influence: number} => item !== null);
   }
 
   // Propagate an activation through the network

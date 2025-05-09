@@ -11,9 +11,8 @@
     "es",
     "lib",
     "umd"
-  ],
-  "scripts": {
-    "build": "yarn clean && yarn build:ts",
+  ],  "scripts": {
+    "build": "yarn clean && yarn build:ts && node scripts/package-resonance-field.js",
     "build:ts": "tsc --build tsconfig.build.json",
     "clean": "rimraf lib demo/dist .swc",
     "prepublishOnly": "npm run build",

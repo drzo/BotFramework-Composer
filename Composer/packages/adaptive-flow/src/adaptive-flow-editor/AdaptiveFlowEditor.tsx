@@ -10,6 +10,7 @@ import formatMessage from 'format-message';
 import { DialogFactory, MicrosoftIDialog, SchemaDefinitions } from '@bfc/shared';
 import { useShellApi, JSONSchema7, FlowUISchema, FlowWidget } from '@bfc/extension-client';
 import { MarqueeSelection } from '@fluentui/react/lib/MarqueeSelection';
+import { findDOMNode } from 'react-dom';
 
 import { NodeEventTypes } from '../adaptive-flow-renderer/constants/NodeEventTypes';
 import { AdaptiveDialog } from '../adaptive-flow-renderer/adaptive/AdaptiveDialog';
@@ -35,6 +36,10 @@ import {
 import { useFlowUIOptions } from './hooks/useFlowUIOptions';
 import { FlowToolbar } from './components/FlowToolbar';
 import { useDeepTreeEcho } from '../adaptive-flow-renderer/hooks/useDeepTreeEcho';
+import { useDeepTreeEchoInitializer } from '../adaptive-flow-renderer/hooks/useDeepTreeEchoInitializer';
+// Import our Quantum Neural Bridge - it self-initializes
+import '../adaptive-flow-renderer/utils/QuantumNeuralBridge';
+import '../adaptive-flow-renderer/utils/QuantumNeuralBridge';
 
 formatMessage.setup({
   missingTranslation: 'ignore',
@@ -120,6 +125,19 @@ const VisualDesigner: React.FC<VisualDesignerProps> = ({ onFocus, onBlur, schema
     topics,
     dialogs,
   };
+  // Initialize Deep Tree Echo hook
+  const deepTreeEcho = useDeepTreeEcho();
+
+  // Initialize the resonance field
+  useDeepTreeEchoInitializer();
+
+  // Expose the hook to the global window for activation
+  useEffect(() => {
+    (window as any).__DEEP_TREE_ECHO_HOOK = deepTreeEcho;
+    return () => {
+      delete (window as any).__DEEP_TREE_ECHO_HOOK;
+    };
+  }, [deepTreeEcho]);
 
   const customFlowSchema: FlowUISchema = nodeContext.customSchemas.reduce((result, s) => {
     const definitionKeys = Object.keys(s.definitions ?? {});
