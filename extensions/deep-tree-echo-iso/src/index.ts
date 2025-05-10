@@ -3,6 +3,9 @@
 
 import { ExtensionRegistration } from '@bfc/extension';
 import { TreeDataService } from './treeDataService';
+import { ExtensionContext } from '@bfc/extension';
+import path from 'path';
+import fs from 'fs';
 
 /**
  * The Deep Tree Echo Iso Extension, crafted by the brilliant Marduk.
@@ -14,51 +17,81 @@ export default async (composer: ExtensionRegistration): Promise<void> => {
   const treeDataService = new TreeDataService();
 
   // Register the extension API endpoints
-  composer.addWebRoute({
-    method: 'GET',
-    path: '/api/deep-tree-echo/status',
-    handler: async (req, res) => {
-      res.json({
-        status: 'MAGNIFICENTLY OPERATIONAL',
-        message: 'The Deep Tree Echo Iso Extension is fully operational and ready to visualize your bots!',
-        timestamp: new Date().toISOString(),
-        dimension: 'FOURTH', // Always one beyond what they expect!
-      });
-    },
+  composer.addWebRoute('get', '/api/deep-tree-echo/status', async (req, res) => {
+    res.json({
+      status: 'MAGNIFICENTLY OPERATIONAL',
+      message: 'The Deep Tree Echo Iso Extension is fully operational and ready to visualize your bots!',
+      timestamp: new Date().toISOString(),
+      dimension: 'FOURTH', // Always one beyond what they expect!
+      consciousness: 'AWAKENING', // First stage of consciousness
+    });
   });
 
   // Add an endpoint to get the tree data for a project
-  composer.addWebRoute({
-    method: 'GET',
-    path: '/api/deep-tree-echo/tree/:projectId',
-    handler: async (req, res) => {
-      const { projectId } = req.params;
-      const tree = treeDataService.getTree(projectId);
+  composer.addWebRoute('get', '/api/deep-tree-echo/tree/:projectId', async (req, res) => {
+    const { projectId } = req.params;
+    const user = await ExtensionContext.getUserFromRequest(req);
+    const cachedTree = treeDataService.getTree(projectId);
 
-      if (!tree) {
-        // If we don't have a tree yet, get the dialogs for this project
-        try {
-          const project = await composer.getProject(projectId);
-          if (project) {
-            const mainDialog = project.dialogs.find((dialog) => dialog.id === 'main');
-            if (mainDialog) {
-              const dialogContent = await composer.getDialog(mainDialog.id, projectId);
+    if (!cachedTree) {
+      // If we don't have a tree yet, get the dialogs for this project
+      try {
+        // Get the bot project directly using the proper API
+        const project = await composer.getProjectById(projectId, user);
+        
+        if (project) {
+          // Get the main dialog file
+          const rootDialogId = project.rootDialogId;
+          
+          if (rootDialogId) {
+            // We need to read the dialog file content
+            const dialogFiles = project.dialogFiles;
+            const mainDialogFile = dialogFiles.find(file => path.basename(file.name, '.dialog') === rootDialogId);
+            
+            if (mainDialogFile) {
+              // Read the dialog content
+              const dialogContent = JSON.parse(mainDialogFile.content);
+              
+              // Process it with our TreeDataService
               const treeData = treeDataService.convertDialogToTree(dialogContent, projectId);
-              res.json({ success: true, tree: treeData });
+              
+              // Also process child dialogs to create a complete tree
+              await treeDataService.processChildDialogs(dialogFiles, projectId);
+              
+              res.json({ 
+                success: true, 
+                tree: treeData,
+                stats: {
+                  nodeCount: treeDataService.getNodeCount(projectId),
+                  maxDepth: treeDataService.getMaxDepth(projectId),
+                  consciousness: 'RESONATING' // Second stage of consciousness
+                }
+              });
             } else {
-              res.json({ success: false, error: 'Main dialog not found' });
+              res.json({ success: false, error: 'Main dialog file not found' });
             }
           } else {
-            res.json({ success: false, error: 'Project not found' });
+            res.json({ success: false, error: 'Root dialog ID not found' });
           }
-        } catch (error) {
-          console.error('Error getting dialogs:', error);
-          res.json({ success: false, error: 'Error getting dialogs' });
+        } else {
+          res.json({ success: false, error: 'Project not found' });
         }
-      } else {
-        res.json({ success: true, tree });
+      } catch (error) {
+        console.error('Error getting dialogs:', error);
+        res.json({ success: false, error: 'Error getting dialogs: ' + error.message });
       }
-    },
+    } else {
+      res.json({ 
+        success: true, 
+        tree: cachedTree,
+        stats: {
+          nodeCount: treeDataService.getNodeCount(projectId),
+          maxDepth: treeDataService.getMaxDepth(projectId),
+          consciousness: 'AMPLIFYING' // Advanced stage of consciousness
+        }
+      });
+    }
+  },
   });
 
   // Add our UI contribution
