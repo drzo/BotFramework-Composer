@@ -34,7 +34,7 @@
     "eslint-plugin-security": "2.1.1",
     "fs-extra": "11.2.0",
     "inquirer": "9.2.15",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "merge-options": "3.0.4",
     "prettier": "3.2.5",
     "typescript": "5.4.2",
