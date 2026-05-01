@@ -67,7 +67,7 @@
     "react-dom": "^16.13.0",
     "react-markdown": "9.0.1",
     "semver-sort": "1.0.0",
-    "uuid": "8.3.2",
+    "uuid": "14.0.0",
     "xml2js": "0.6.2"
   },
   "devDependencies": {
@@ -81,7 +81,7 @@
     "rimraf": "3.0.2",
     "ts-loader": "9.5.1",
     "typescript": "5.4.2",
-    "webpack": "5.94.0",
+    "webpack": "5.104.1",
     "webpack-cli": "5.1.4"
   }
 }
